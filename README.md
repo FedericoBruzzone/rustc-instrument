@@ -1,12 +1,16 @@
 # rustc-plug-ast
 
-Manipulating the Rust AST at compile time.
+A wrapper on `rustc` to manipulate the raw Rust AST before expansion at compile time.
 
 ## Examples
 
 ### Using `driver` of `rustc_plugin`
 
 It will print the AST of the crate at the given path, and generate the executable.
+
+Note that `rustc-plug-ast-driver` is a wrapper on top of `rustc`. If `CARGO_PRIMARY_PACKAGE` is not set then `rustc-plug-ast-driver` is equivalent to `rustc`.
+
+> In `--extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib` replace `<HASH>` with the actual hash of the `env_logger` crate.
 
 **Simple Way**
 
@@ -17,8 +21,6 @@ cargo run --bin rustc-plug-ast-driver ./test-crate/src/main.rs -L dependency=./t
 ```
 
 **Advanced Way**
-
-Note that `rustc-plug-ast-driver` is a wrapper on top of `rustc`. If `CARGO_PRIMARY_PACKAGE` is not set then `rustc-plug-ast-driver` is equivalent to `rustc`.
 
 ```bash
 export CARGO_PRIMARY_PACKAGE=1
