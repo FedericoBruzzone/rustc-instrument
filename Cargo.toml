@@ -1,0 +1,4 @@
+[workspace]
+members = ["rustc_plugin", "rustc_plug_ast"]
+
+resolver = "2"
