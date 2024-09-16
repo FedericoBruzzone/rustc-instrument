@@ -26,6 +26,7 @@ cargo run --bin rustc-plug-ast-driver ./test-crate/src/main.rs -L dependency=./t
 export CARGO_PRIMARY_PACKAGE=1
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<`rustc --print sysroot`>/lib # Something like ~/.rustup/toolchains/nightly-2024-01-24-x86_64-unknown-linux-gnu/lib
 cargo clean
+cargo build # build the compiler
 ./target/debug/rustc-plug-ast-driver ./test-crate/src/main.rs -L dependency=./target/debug/deps --extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib
 ```
 

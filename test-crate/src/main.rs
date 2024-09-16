@@ -1,4 +1,6 @@
+#[cfg(feature = "hello")]
 fn main() {
-    env_logger::init();
+    // env_logger::init();
     println!("Hello, world!");
 }
+

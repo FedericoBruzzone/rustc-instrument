@@ -130,6 +130,7 @@ impl rustc_driver::Callbacks for PrintAstCallbacks {
 
 struct CollectVisitor;
 
+// Visit in pre-order
 impl<'ast> Visitor<'ast> for CollectVisitor {
     fn visit_ident(&mut self, _ident: Ident) {}
     fn visit_foreign_item(&mut self, i: &'ast ForeignItem) {
@@ -244,6 +245,7 @@ impl<'ast> Visitor<'ast> for CollectVisitor {
         walk_assoc_constraint(self, constraint)
     }
     fn visit_attribute(&mut self, attr: &'ast Attribute) {
+        // Macro attributes are here
         walk_attribute(self, attr)
     }
     fn visit_vis(&mut self, vis: &'ast Visibility) {
