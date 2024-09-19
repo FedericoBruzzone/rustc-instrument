@@ -9,13 +9,17 @@ use cargo_metadata::camino::Utf8Path;
 use super::plugin::{RustcPlugin, PLUGIN_ARGS};
 use crate::CrateFilter;
 
-pub const RUN_ON_ALL_CRATES: &str = "RUSTC_PLUGIN_ALL_TARGETS";
+pub const RUSTC_PLUGIN_ALL_TARGETS: &str = "RUSTC_PLUGIN_ALL_TARGETS";
 pub const SPECIFIC_CRATE: &str = "SPECIFIC_CRATE";
 pub const SPECIFIC_TARGET: &str = "SPECIFIC_TARGET";
 pub const CARGO_VERBOSE: &str = "CARGO_VERBOSE";
+pub const RUSTC_WORKSPACE_WRAPPER: &str = "RUSTC_WORKSPACE_WRAPPER";
 
 /// The top-level function that should be called in your user-facing binary.
 pub fn cli_main<T: RustcPlugin>(plugin: T) {
+    log::debug!("{:?}", env::args());
+
+    // cargo run --bin <rustc-plug-cli> -- -V
     if env::args().any(|arg| arg == "-V") {
         println!("{}", plugin.version());
         return;
@@ -26,10 +30,12 @@ pub fn cli_main<T: RustcPlugin>(plugin: T) {
         .other_options(["--all-features".to_string(), "--offline".to_string()])
         .exec()
         .unwrap();
-    let plugin_subdir = format!("plugin-{}", env!("RUSTC_CHANNEL"));
+    let plugin_subdir = format!("plugin-{}", env!("RUSTC_CHANNEL")); // This is set by the build
+                                                                     // script
     let target_dir = metadata.target_directory.join(plugin_subdir);
+    log::debug!("Target directory: {:?}", target_dir);
 
-    let args = plugin.args(&target_dir);
+    let plugin_args = plugin.args(&target_dir);
 
     let mut cmd = Command::new("cargo");
     cmd.stdout(Stdio::inherit()).stderr(Stdio::inherit());
@@ -37,12 +43,15 @@ pub fn cli_main<T: RustcPlugin>(plugin: T) {
     let mut path = env::current_exe()
         .expect("current executable path invalid")
         .with_file_name(plugin.driver_name().as_ref());
+    log::debug!("Driver path: {:?}", path);
 
     if cfg!(windows) {
         path.set_extension("exe");
     }
 
-    cmd.env("RUSTC_WORKSPACE_WRAPPER", path)
+    // Use the driver instead of `rustc` directly. The --target-dir
+    // allows us to cache the build artifacts in a separate directory.
+    cmd.env(RUSTC_WORKSPACE_WRAPPER, path)
         .args(["check", "--target-dir"])
         .arg(&target_dir);
 
@@ -52,6 +61,7 @@ pub fn cli_main<T: RustcPlugin>(plugin: T) {
         cmd.arg("-q");
     }
 
+    // The workspace members are the packages that are part of the current workspace.
     let workspace_members = metadata
         .workspace_members
         .iter()
@@ -64,33 +74,46 @@ pub fn cli_main<T: RustcPlugin>(plugin: T) {
         })
         .collect::<Vec<_>>();
 
-    match args.filter {
+    match plugin_args.filter {
         CrateFilter::CrateContainingFile(file_path) => {
+            log::debug!("Running on file: {:?}", file_path);
             only_run_on_file(&mut cmd, file_path, &workspace_members, &target_dir);
         }
         CrateFilter::AllCrates | CrateFilter::OnlyWorkspace => {
             cmd.arg("--all");
-            match args.filter {
+            match plugin_args.filter {
                 CrateFilter::AllCrates => {
-                    cmd.env(RUN_ON_ALL_CRATES, "");
+                    // We need to pass this env var to the driver to warn it that we need to run
+                    // the plugin in general.
+                    log::debug!("Running on all crates");
+                    cmd.env(RUSTC_PLUGIN_ALL_TARGETS, "");
                 }
-                CrateFilter::OnlyWorkspace => {}
+                CrateFilter::OnlyWorkspace => {
+                    log::debug!("Running on workspace crates");
+                    // Just need to run `rustc` in this case because we're only running on the
+                    // workspace.
+                }
                 CrateFilter::CrateContainingFile(_) => unreachable!(),
             }
         }
     }
 
-    let args_str = serde_json::to_string(&args.args).unwrap();
-    log::debug!("{PLUGIN_ARGS}={args_str}");
+    let args_str = serde_json::to_string(&plugin_args.args).unwrap();
+    log::debug!("Plugin args: {}", args_str);
+    // We need to pass the plugin args to the driver, so we set an env var
     cmd.env(PLUGIN_ARGS, args_str);
 
     // HACK: if running on the rustc codebase, this env var needs to exist
     // for the code to compile
-    if workspace_members.iter().any(|pkg| pkg.name == "rustc-main") {
+    // WARN: In future for some reason, these crates may not exist
+    if workspace_members
+        .iter()
+        .any(|pkg| pkg.name == "rustc-main" || pkg.name == "rustc_driver")
+    {
         cmd.env("CFG_RELEASE", "");
     }
 
-    plugin.modify_cargo(&mut cmd, &args.args);
+    plugin.modify_cargo(&mut cmd, &plugin_args.args);
 
     let exit_status = cmd.status().expect("failed to wait for cargo?");
 
@@ -163,6 +186,7 @@ fn only_run_on_file(
         1 => matching.remove(0),
         _ => panic!("Too many matching targets: {matching:?}"),
     };
+    log::debug!("Package: {}, target: {}", pkg.name, target.name);
 
     // Add compile filter to specify the target corresponding to the given file
     cmd.arg("-p").arg(format!("{}:{}", pkg.name, pkg.version));
@@ -185,6 +209,7 @@ fn only_run_on_file(
 
     match kind {
         CompileKind::Lib => {
+            log::debug!("Running on lib: {}", pkg.name);
             // If the rmeta files were previously generated for the lib (e.g. by running the plugin
             // on a reverse-dep), then we have to remove them or else Cargo will memoize the plugin.
             let deps_dir = target_dir.join("debug").join("deps");
@@ -203,9 +228,14 @@ fn only_run_on_file(
             cmd.arg("--lib");
         }
         CompileKind::Bin => {
+            log::debug!("Running on bin: {}", target.name);
             cmd.args(["--bin", &target.name]);
         }
-        CompileKind::ProcMacro => {}
+        CompileKind::ProcMacro => {
+            log::debug!("Running on proc-macro: {}", target.name);
+            log::warn!("Running on proc-macros is not yet supported");
+            unimplemented!();
+        }
     }
 
     cmd.env(SPECIFIC_CRATE, &pkg.name.replace('-', "_"));

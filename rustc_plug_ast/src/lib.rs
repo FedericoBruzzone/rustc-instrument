@@ -119,7 +119,7 @@ impl rustc_driver::Callbacks for PrintAstCallbacks {
     ) -> rustc_driver::Compilation {
         let krate_res = queries.parse().unwrap();
         let krate = &(*krate_res.borrow());
-        println!("Crate: {krate:#?}");
+        // println!("Crate: {krate:#?}");
 
         let collector = &mut CollectVisitor;
         let _ = visit::walk_crate(collector, krate);

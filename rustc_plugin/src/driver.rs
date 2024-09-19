@@ -9,7 +9,7 @@ use rustc_session::{config::ErrorOutputType, EarlyDiagCtxt};
 use rustc_tools_util::VersionInfo;
 
 use super::plugin::{RustcPlugin, PLUGIN_ARGS};
-use crate::cli::{RUN_ON_ALL_CRATES, SPECIFIC_CRATE, SPECIFIC_TARGET};
+use crate::cli::{RUSTC_PLUGIN_ALL_TARGETS, SPECIFIC_CRATE, SPECIFIC_TARGET};
 
 /// If a command-line option matches `find_arg`, then apply the predicate `pred` on its value. If
 /// true, then return it. The parameter is assumed to be either `--arg=value` or `--arg value`.
@@ -136,7 +136,7 @@ pub fn driver_main<T: RustcPlugin>(plugin: T) {
         // 1. Either we're supposed to run on all crates, or CARGO_PRIMARY_PACKAGE is set.
         // 2. --print is NOT passed, since Cargo does that to get info about rustc.
         let primary_package = env::var("CARGO_PRIMARY_PACKAGE").is_ok();
-        let run_on_all_crates = env::var(RUN_ON_ALL_CRATES).is_ok();
+        let run_on_all_crates = env::var(RUSTC_PLUGIN_ALL_TARGETS).is_ok();
         let normal_rustc = arg_value(&args, "--print", |_| true).is_some();
         let is_target_crate = match (env::var(SPECIFIC_CRATE), env::var(SPECIFIC_TARGET)) {
             (Ok(krate), Ok(target)) => {
