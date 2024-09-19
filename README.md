@@ -17,6 +17,12 @@ Note that `rustc-plug-ast-driver` is a wrapper on top of `rustc`. If `CARGO_PRIM
 ```bash
 export CARGO_PRIMARY_PACKAGE=1
 cargo clean
+cargo run --bin rustc-plug-ast-driver ./test-crate/src/main.rs
+```
+
+To specify the path of the crate, use the following command:
+```bash
+# -L dependency=./target/debug/deps --extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib
 cargo run --bin rustc-plug-ast-driver ./test-crate/src/main.rs -L dependency=./target/debug/deps --extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib
 ```
 
@@ -27,6 +33,12 @@ export CARGO_PRIMARY_PACKAGE=1
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:<`rustc --print sysroot`>/lib # Something like ~/.rustup/toolchains/nightly-2024-01-24-x86_64-unknown-linux-gnu/lib
 cargo clean
 cargo build # build the compiler
+./target/debug/rustc-plug-ast-driver ./test-crate/src/main.rs
+```
+
+To specify the path of the crate, use the following command:
+```bash
+# -L dependency=./target/debug/deps --extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib
 ./target/debug/rustc-plug-ast-driver ./test-crate/src/main.rs -L dependency=./target/debug/deps --extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib
 ```
 
