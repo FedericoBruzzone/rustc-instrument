@@ -1,5 +1,5 @@
 [package]
-name = "rustc_plug_ast"
+name = "print-hir-ast"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,7 +8,7 @@ rustc_private = true
 
 [dependencies]
 # rustc_plugin = "0.10.0-nightly-2024-05-20"
-rustc_plugin = { path = "../rustc_plugin" }
+rustc-instrument = { path = "../../rustc-instrument" }
 env_logger = "0.10"
 clap = { version = "4.4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }

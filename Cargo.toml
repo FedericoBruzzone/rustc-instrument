@@ -1,4 +1,4 @@
 [workspace]
-members = ["rustc_plugin", "rustc_plug_ast"]
+members = ["rustc-instrument", "examples/print-hir-ast"]
 
 resolver = "2"

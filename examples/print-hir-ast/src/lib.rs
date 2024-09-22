@@ -18,7 +18,7 @@ use rustc_span::symbol::*;
 use rustc_span::Span;
 
 use clap::Parser;
-use rustc_plugin::{CrateFilter, RustcPlugin, RustcPluginArgs, Utf8Path};
+use rustc_instrument::{CrateFilter, RustcPlugin, RustcPluginArgs, Utf8Path};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, env, process::Command};
 
@@ -41,7 +41,7 @@ impl RustcPlugin for PrintAst {
     }
 
     fn driver_name(&self) -> Cow<'static, str> {
-        "rustc-plug-ast-driver".into()
+        "print-hir-ast-driver".into()
     }
 
     // In the CLI, we ask Clap to parse arguments and also specify a CrateFilter.
