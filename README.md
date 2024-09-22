@@ -1,6 +1,6 @@
 # rustc-instrument
 
-A wrapper on `rustc` to manipulate the raw Rust AST before expansion at compile time.
+A crate to instrument the Rust compiler (`rustc`).
 
 ## Examples
 
@@ -54,6 +54,40 @@ To specify the path of the crate, use the following command:
 # -L dependency=./target/debug/deps --extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib
 RUST_LOG=debug ./target/debug/print-hir-ast-driver ./test-crate/src/main.rs -L dependency=./target/debug/deps --extern env_logger=./target/debug/deps/libenv_logger-<HASH>.rlib
 ```
+
+## General Information
+
+1. This crate is a fork of the [rustc_plugin](https://github.com/cognitive-engineering-lab/rustc_plugin) crate.
+2. A common issue when using this crate is the error:
+    ```
+    error: failed to run `rustc` to learn about target-specific information
+
+    Caused by:
+      could not execute process `/home/fcb/dev/rustc-instrument/target/debug/pprint-hir-ast-driver
+            /home/fcb/.rustup/toolchains/nightly-2024-01-24-x86_64-unknown-linux-gnu/bin/rustc -
+            --crate-name ___
+            --print=file-names
+            --crate-type bin
+            --crate-type rlib
+            --crate-type dylib
+            --crate-type cdylib
+            --crate-type staticlib
+            --crate-type proc-macro
+            --print=sysroot
+            --print=split-debuginfo
+            --print=crate-name
+            --print=cfg` (never executed)
+
+    Caused by:
+      No such file or directory (os error 2)
+    ```
+    this is due to the fact `pprint-hir-ast-driver` is not a correct name for the executable (it should be `print-hir-ast-driver` in this example).
+    Make sure to set in the `driver_name` function of the `RustcPlugin` trait the correct name of the executable.
+    ```rust
+    fn driver_name(&self) -> Cow<'static, str> {
+        "print-hir-ast-driver".into()
+    }
+    ```
 
 ## Contact
 
