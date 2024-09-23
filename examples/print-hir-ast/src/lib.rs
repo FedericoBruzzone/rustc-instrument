@@ -22,16 +22,23 @@ use rustc_instrument::{CrateFilter, RustcPlugin, RustcPluginArgs, Utf8Path};
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, env, process::Command};
 
-#[cfg(feature = "test1")]
-fn test1() {}
-#[cfg(feature = "test2")]
-fn test2() {}
-#[cfg(all(feature = "test1", not(feature = "test2")))]
-fn test3() {}
-
 // This struct is the plugin provided to the rustc_plugin framework,
 // and it must be exported for use by the CLI/driver binaries.
 pub struct PrintAst;
+
+// To parse CLI arguments, we use Clap for this example. But that
+// detail is up to you.
+#[derive(Parser, Serialize, Deserialize, Default)]
+pub struct PrintAstArgs {
+    /// Pass --allcaps to print all item names in uppercase.
+    #[clap(long)]
+    allcaps: bool,
+
+    #[clap(last = true)]
+    // mytool --allcaps -- some extra args here
+    //                     ^^^^^^^^^^^^^^^^^^^^ these are cargo args
+    cargo_args: Vec<String>,
+}
 
 impl RustcPlugin for PrintAst {
     type Args = PrintAstArgs;
@@ -77,14 +84,6 @@ impl RustcPlugin for PrintAst {
     }
 }
 
-// To parse CLI arguments, we use Clap for this example. But that
-// detail is up to you.
-#[derive(Parser, Serialize, Deserialize, Default)]
-pub struct PrintAstArgs {
-    #[clap(last = true)]
-    cargo_args: Vec<String>,
-}
-
 struct PrintAstCallbacks {
     _args: PrintAstArgs,
 }
@@ -119,7 +118,13 @@ impl rustc_driver::Callbacks for PrintAstCallbacks {
     ) -> rustc_driver::Compilation {
         let krate_res = queries.parse().unwrap();
         let krate = &(*krate_res.borrow());
-        // println!("Crate: {krate:#?}");
+        if self._args.allcaps {
+            let krate = format!("{:#?}", krate);
+            let upper = krate.to_uppercase();
+            println!("{upper}");
+        } else {
+            println!("{krate:#?}");
+        }
 
         let collector = &mut CollectVisitor;
         let _ = visit::walk_crate(collector, krate);

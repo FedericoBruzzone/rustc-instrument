@@ -1,5 +1,4 @@
 use std::{env, fs, path::Path, process::Command, sync::Once};
-
 use anyhow::{ensure, Context, Result};
 
 static SETUP: Once = Once::new();
@@ -14,7 +13,7 @@ fn run(dir: &str, f: impl FnOnce(&mut Command)) -> Result<String> {
         cmd.args([
             "install",
             "--path",
-            "examples/print-all-items",
+            "../examples/print-hir-ast",
             "--debug",
             "--locked",
             "--root",
@@ -28,7 +27,7 @@ fn run(dir: &str, f: impl FnOnce(&mut Command)) -> Result<String> {
     });
 
     let mut cmd = Command::new("cargo");
-    cmd.arg("print-all-items");
+    cmd.arg("print-hir-ast");
 
     let path = format!(
         "{}:{}",
@@ -55,20 +54,23 @@ fn run(dir: &str, f: impl FnOnce(&mut Command)) -> Result<String> {
 }
 
 // TODO: why do these tests need to be run sequentially?
+// cargo test -- --test-threads=1
 
 #[test]
 fn basic() -> Result<()> {
     let output = run("workspaces/basic", |_cmd| {})?;
-    assert!(output.contains(r#"There is an item "add" of type "function""#));
+    // println!("{}", output); // cargo test -- --nocapture
+    assert!(output.contains(r#"ident: add#0"#));
     Ok(())
 }
 
 #[test]
 fn arg() -> Result<()> {
     let output = run("workspaces/basic", |cmd| {
-        cmd.arg("-a");
+        cmd.arg("--allcaps");
     })?;
-    assert!(output.contains(r#"THERE IS AN ITEM "ADD" OF TYPE "FUNCTION""#));
+    // println!("{}", output); // cargo test -- --nocapture
+    assert!(output.contains(r#"IDENT: ADD#0"#));
     Ok(())
 }
 
@@ -78,7 +80,7 @@ fn feature() -> Result<()> {
         cmd.args(["--", "--features", "sub"]);
     })?;
     assert!(
-        output.contains(r#"There is an item "sub" of type "function""#),
+        output.contains(r#"symbol: "sub""#),
         "output:\n{output}"
     );
     Ok(())
