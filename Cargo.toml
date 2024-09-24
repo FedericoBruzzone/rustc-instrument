@@ -2,6 +2,7 @@
 members = [
     "rustc-instrument",
     "examples/print-hir-ast",
+    "examples/rustc-ex",
 ]
 
 resolver = "2"

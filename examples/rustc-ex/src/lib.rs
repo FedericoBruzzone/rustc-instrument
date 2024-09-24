@@ -1,5 +1,3 @@
-//! A Rustc plugin that prints out the name of all items in a crate.
-
 #![feature(rustc_private)]
 
 extern crate rustc_ast;
@@ -14,6 +12,7 @@ use rustc_ast::{
     ast::*,
     visit::{self, *},
 };
+use rustc_middle::ty::ResolverAstLowering;
 use rustc_span::symbol::*;
 use rustc_span::Span;
 
@@ -24,7 +23,7 @@ use std::{borrow::Cow, env, process::Command};
 
 // This struct is the plugin provided to the rustc_plugin framework,
 // and it must be exported for use by the CLI/driver binaries.
-pub struct PrintAst;
+pub struct RustcEx;
 
 // To parse CLI arguments, we use Clap for this example. But that
 // detail is up to you.
@@ -40,7 +39,7 @@ pub struct PrintAstArgs {
     cargo_args: Vec<String>,
 }
 
-impl RustcPlugin for PrintAst {
+impl RustcPlugin for RustcEx {
     type Args = PrintAstArgs;
 
     fn version(&self) -> Cow<'static, str> {
@@ -48,7 +47,7 @@ impl RustcPlugin for PrintAst {
     }
 
     fn driver_name(&self) -> Cow<'static, str> {
-        "print-hir-ast-driver".into()
+        "rustc-ex-driver".into()
     }
 
     // In the CLI, we ask Clap to parse arguments and also specify a CrateFilter.
@@ -116,18 +115,18 @@ impl rustc_driver::Callbacks for PrintAstCallbacks {
         _compiler: &rustc_interface::interface::Compiler,
         _queries: &'tcx rustc_interface::Queries<'tcx>,
     ) -> rustc_driver::Compilation {
-        let krate_res = _queries.parse().unwrap();
-        let krate = &(*krate_res.borrow());
-        if self._args.allcaps {
-            let krate = format!("{:#?}", krate);
-            let upper = krate.to_uppercase();
-            println!("{upper}");
-        } else {
-            println!("{krate:#?}");
-        }
-
-        let collector = &mut CollectVisitor;
-        let _ = visit::walk_crate(collector, krate);
+        // let krate_res = _queries.parse().unwrap();
+        // let krate = &(*krate_res.borrow());
+        // if self._args.allcaps {
+        //     let krate = format!("{:#?}", krate);
+        //     let upper = krate.to_uppercase();
+        //     println!("{upper}");
+        // } else {
+        //     println!("{krate:#?}");
+        // }
+        //
+        // let collector = &mut CollectVisitor;
+        // let _ = visit::walk_crate(collector, krate);
 
         rustc_driver::Compilation::Continue
     }
@@ -135,15 +134,20 @@ impl rustc_driver::Callbacks for PrintAstCallbacks {
     fn after_expansion<'tcx>(
         &mut self,
         _compiler: &rustc_interface::interface::Compiler,
-        _queries: &'tcx rustc_interface::Queries<'tcx>,
+        queries: &'tcx rustc_interface::Queries<'tcx>,
     ) -> rustc_driver::Compilation {
-        // queries.global_ctxt().unwrap().enter(|tcx: rustc_middle::ty::TyCtxt| {
-        //
-        //     let krate = tcx.resolver_for_lowering(()).steal();
-        //     println!("AST: {:#?}", krate.1);
-        //     let collector = &mut CollectVisitor;
-        //     let _ = visit::walk_crate(collector, &krate.1);
-        // });
+        let queries = queries;
+        queries
+            .global_ctxt()
+            .unwrap()
+            .enter(|tcx: rustc_middle::ty::TyCtxt| {
+                // let krate = tcx.resolver_for_lowering(()).steal(); // steal cause a compilation error
+                let resolver_and_krate = tcx.resolver_for_lowering(()).borrow();
+                let krate = &*resolver_and_krate.1;
+                println!("{:#?}", krate);
+                // let collector = &mut CollectVisitor;
+                // let _ = visit::walk_crate(collector, &krate.1);
+            });
 
         rustc_driver::Compilation::Continue
     }
