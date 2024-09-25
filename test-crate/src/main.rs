@@ -1,10 +1,21 @@
 mod test_file;
+mod test_file1;
 
-use test_file::test_func;
+#[cfg(feature = "xxx")]
+fn xxx() {}
+
+#[cfg(feature = "yyy")]
+fn xxx() {}
+
+fn yyy() {
+    if cfg!(feature = "yyy") {}
+}
 
 fn main() {
-    env_logger::init();
-    test_func()
+    // env_logger::init();
+    test_file::test_func();
+    xxx();
+    yyy();
 }
 
 // #[cfg(feature = "p1")]
@@ -63,4 +74,3 @@ fn main() {
 // fn true_main2() -> i32 {
 //     1
 // }
-

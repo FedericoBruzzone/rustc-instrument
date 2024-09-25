@@ -136,7 +136,6 @@ impl rustc_driver::Callbacks for PrintAstCallbacks {
         _compiler: &rustc_interface::interface::Compiler,
         queries: &'tcx rustc_interface::Queries<'tcx>,
     ) -> rustc_driver::Compilation {
-        let queries = queries;
         queries
             .global_ctxt()
             .unwrap()
