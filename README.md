@@ -29,6 +29,7 @@ Note that `print-hir-ast-driver` is a wrapper on top of `rustc`. If `CARGO_PRIMA
 export CARGO_PRIMARY_PACKAGE=1
 cargo clean
 cargo run --bin print-hir-ast-driver ./test-crate/src/main.rs
+# cargo run --bin print-hir-ast-driver -- --cfg 'feature="test"' ./test-crate/src/main.rs
 ```
 
 To specify the path of the crate, use the following command:

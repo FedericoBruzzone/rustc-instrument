@@ -105,7 +105,7 @@ pub fn driver_main<T: RustcPlugin>(plugin: T) {
 
     exit(rustc_driver::catch_with_exit_code(move || {
         let mut orig_args: Vec<String> = env::args().collect();
-
+	
         let (have_sys_root_arg, sys_root) = get_sysroot(&orig_args);
 
         if orig_args.iter().any(|a| a == "--version" || a == "-V") {

@@ -1,22 +1,29 @@
-mod test_file;
-mod test_file1;
-
-#[cfg(feature = "xxx")]
-fn xxx() {}
-
-#[cfg(feature = "yyy")]
-fn xxx() {}
-
-fn yyy() {
-    if cfg!(feature = "yyy") {}
-}
+#[cfg(feature = "test")]
+fn ciao() {}
 
 fn main() {
-    // env_logger::init();
-    test_file::test_func();
-    xxx();
-    yyy();
+    ciao()
 }
+
+// mod test_file;
+// mod test_file1;
+//
+// #[cfg(feature = "xxx")]
+// fn xxx() {}
+//
+// #[cfg(feature = "yyy")]
+// fn xxx() {}
+//
+// fn yyy() {
+//     if cfg!(feature = "yyy") {}
+// }
+//
+// fn main() {
+//     // env_logger::init();
+//     test_file::test_func();
+//     xxx();
+//     yyy();
+// }
 
 // #[cfg(feature = "p1")]
 // fn pippo() -> i32 {
