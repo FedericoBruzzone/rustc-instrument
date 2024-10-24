@@ -1,7 +1,11 @@
+pub mod test_file;
+pub mod test_file1;
+
 #[cfg(feature = "test")]
 fn ciao() {}
 
 fn main() {
+    test_file::test_func();
     ciao()
 }
 
